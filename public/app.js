@@ -37,46 +37,55 @@ function navActive(){
 
 function renderHeader(){
   const active = navActive();
+  const metaLabel = active === 'overview' ? 'OVERVIEW <span>摄影作品</span>' : active === 'work' ? 'WORK <span>摄影作品</span>' : 'ABOUT <span>关于我</span>';
   header.innerHTML = `
-    <div class="header-top">
+    <div class="header-primary">
       <a class="brand" href="#/" aria-label="HOVAI overview">
         <span class="brand-en">${esc(data.site.brand)}</span>
         <span class="brand-zh">${esc(data.site.nameZh)}</span>
       </a>
-      <a class="edit-link" href="/admin.html">EDIT</a>
+      <div class="header-actions">
+        <nav class="main-nav" aria-label="Primary navigation">
+          <a href="#/" class="${active==='overview'?'active':''}"><span>OVERVIEW</span><span class="zh">概述</span></a>
+          <a href="#/work" class="${active==='work'?'active':''}"><span>WORK</span><span class="zh">工作</span></a>
+          <a href="#/about" class="${active==='about'?'active':''}"><span>ABOUT</span><span class="zh">关于我</span></a>
+        </nav>
+        <a class="edit-link" href="/admin.html"><span class="edit-zh">管理作品 / </span>Edit</a>
+      </div>
     </div>
-    <nav class="main-nav" aria-label="Primary navigation">
-      <a href="#/" class="${active==='overview'?'active':''}"><span>OVERVIEW</span><span class="zh">概述</span></a>
-      <a href="#/work" class="${active==='work'?'active':''}"><span>WORK</span><span class="zh">工作</span></a>
-      <a href="#/about" class="${active==='about'?'active':''}"><span>ABOUT</span><span class="zh">关于我</span></a>
-    </nav>
-    <div class="header-meta">${esc(data.site.location)}</div>`;
+    <div class="header-rule"></div>
+    <div class="header-meta"><span class="header-meta-label">${metaLabel}</span><span>${esc(data.site.location)}</span></div>`;
 }
-
 function catLink(cat){
   return cat.id === 'past-works' ? '#/work/past-works' : `#/work/${encodeURIComponent(cat.id)}`;
 }
 
 function renderHome(){
   const cats = data.categories;
-  app.innerHTML = `<section class="app-view fade-in">
+  app.innerHTML = `<section class="app-view home-view fade-in">
     <div class="hero" id="hero">
       <div class="hero-stage">
-        ${cats.map((c,i)=>`<picture>
-          <source media="(max-width:760px)" srcset="${esc(c.mobileCover || c.cover)}">
-          <img class="hero-image ${i===0?'active':''}" data-hero="${i}" src="${esc(c.cover)}" alt="${esc(c.title)}" style="object-position:${esc(c.position||'50% 50%')}" ${i===0?'fetchpriority="high"':''}>
-        </picture>`).join('')}
-        <div class="hero-shade"></div>
+        ${cats.map((c,i)=>`<div class="hero-slide ${i===0?'active':''}" data-hero="${i}">
+          <picture>
+            <source media="(max-width:760px)" srcset="${esc(c.mobileCover || c.cover)}">
+            <img class="hero-image" src="${esc(c.cover)}" alt="${esc(c.title)}" style="--desk-pos:${esc(c.position||'50% 50%')};--mobile-pos:${esc(c.mobilePosition||c.position||'50% 50%')}" ${i===0?'fetchpriority="high"':''}>
+          </picture>
+          <div class="hero-slide-shade"></div>
+        </div>`).join('')}
         <div class="hero-copy" id="heroCopy"></div>
+      </div>
+    </div>
+    <div class="home-selector-shell">
+      <div class="home-selector-inner">
         <div class="hero-selector" id="heroSelector">
           ${cats.map((c,i)=>`<button class="selector-card ${i===0?'active':''}" data-index="${i}" aria-label="Show ${esc(c.title)}">
             <img class="selector-thumb" src="${esc(c.cover)}" alt="">
             <span class="selector-meta"><span class="selector-no">${esc(c.number)}</span><span class="selector-name">${esc(c.title)}</span><span class="selector-arrow">↗</span></span>
           </button>`).join('')}
         </div>
+        <div class="selector-context"><span>OVERVIEW&nbsp; <em>摄影作品</em></span><span>${esc(data.site.location)}</span></div>
       </div>
     </div>
-    <div class="home-intro"><span>SELECTED WORK</span><span>PEOPLE, STILL LIFE &amp; SENTIMENT</span></div>
     <div class="home-list">
       ${cats.map(c=>`<a class="mobile-cat" href="${catLink(c)}"><img src="${esc(c.cover)}" alt=""><div class="text">${esc(c.title)}<div class="zh">${esc(c.titleZh)}</div></div><div class="arr">↗</div></a>`).join('')}
     </div>
@@ -84,18 +93,17 @@ function renderHome(){
   </section>`;
   let active = 0;
   const copy = $('#heroCopy');
-  const imgs = $$('.hero-image');
+  const slides = $$('.hero-slide');
   const cards = $$('.selector-card');
   function activate(i, user=false){
     active = (i + cats.length) % cats.length;
-    imgs.forEach((el,n)=>{
-      el.classList.toggle('active',n===active);
-      const c=cats[n];
-      el.style.objectPosition = innerWidth<=760 ? (c.mobilePosition||c.position||'50% 50%') : (c.position||'50% 50%');
-    });
+    slides.forEach((el,n)=>el.classList.toggle('active',n===active));
     cards.forEach((el,n)=>el.classList.toggle('active',n===active));
     const c = cats[active];
-    copy.innerHTML = `<div class="hero-index">${esc(c.number)} / 04</div><h1 class="hero-title">${esc(c.title)}</h1><div class="hero-zh">${esc(c.titleZh)}</div><a class="hero-cta" href="${catLink(c)}"><span>VIEW WORK</span><span>↗</span></a>`;
+    copy.classList.remove('copy-enter');
+    void copy.offsetWidth;
+    copy.innerHTML = `<div class="hero-index">${esc(c.number)} / 04&nbsp;&nbsp;&nbsp; HOVAI</div><h1 class="hero-title">${esc(c.title)}</h1><div class="hero-zh">${esc(c.titleZh)}</div><a class="hero-cta" href="${catLink(c)}"><span>VIEW WORK</span><span>↗</span></a>`;
+    copy.classList.add('copy-enter');
     if(user) restart();
   }
   function restart(){
@@ -105,14 +113,13 @@ function renderHome(){
   cards.forEach((el,i)=>{
     el.addEventListener('mouseenter',()=>activate(i,true));
     el.addEventListener('focus',()=>activate(i,true));
-    el.addEventListener('click',()=>location.hash=catLink(cats[i]).replace(/^#/,'#'));
+    el.addEventListener('click',()=>{ location.hash=catLink(cats[i]).replace(/^#/,'#'); });
   });
   const hero=$('#hero');
   hero.addEventListener('mouseenter',()=>clearInterval(heroTimer));
   hero.addEventListener('mouseleave',restart);
   activate(0); restart();
 }
-
 function renderWork(){
   app.innerHTML = `<section class="page fade-in">
     <div class="page-heading"><h1>Selected Work</h1><small>Still Life / People / Fashion / Past Works</small></div>
